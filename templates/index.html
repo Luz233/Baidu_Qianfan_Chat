@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ERNIE-Bot Chat</title>
+    <script src="https://www.hyluz.cn/marked.min.js"></script>
+</head>
+<body>
+    <h1>ERNIE-Bot Chat</h1>
+    <div id="chat-container">
+        <div id="chat-history"></div>
+        <input type="text" id="user-input" placeholder="输入您的消息..." />
+        <button id="send-button" onclick="sendMessage()">发送</button>
+    </div>
+
+    <script>
+        const chatHistory = document.getElementById("chat-history");
+        const userInput = document.getElementById("user-input");
+
+        function getCookie(name) {
+            const value = "; " + document.cookie;
+            const parts = value.split("; " + name + "=");
+            if (parts.length === 2) return parts.pop().split(";").shift();
+        }
+
+        function addMessageToChatHistory(role, message) {
+            const messageElement = document.createElement("div");
+            messageElement.className = role;
+            messageElement.innerHTML = marked.parse(message);
+            chatHistory.appendChild(messageElement);
+        }
+
+        function sendMessage() {
+            const userMessage = userInput.value.trim();
+            if (!userMessage) {
+                return;
+            }
+
+            const userId = getCookie("sessionid");
+
+            addMessageToChatHistory("user", "用户: " + userMessage);
+
+            fetch("/chat", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ "user_id": userId, "user_input": userMessage }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                const botResponse = data.response;
+                addMessageToChatHistory("assistant", "GPT: " + botResponse);
+            })
+            .catch(error => {
+                console.error("Error:", error);
+            });
+
+            userInput.value = "";
+        }
+    </script>
+</body>
+</html>
